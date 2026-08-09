@@ -1,0 +1,92 @@
+# ── Dependencies ──────────────────────────────────────────
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# ── Environment — NEVER commit real secrets ────────────────
+.env
+.env.local
+.env.development
+.env.production
+.env.staging
+.env.test
+# Only .env.example should be committed (no real values)
+
+# ── Logs ──────────────────────────────────────────────────
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ── Build / compiled output ────────────────────────────────
+dist/
+build/
+out/
+
+# ── Database ───────────────────────────────────────────────
+*.sql.backup
+*.dump
+*.sqlite
+*.sqlite3
+*.db
+
+# ── SSL / Certificates ─────────────────────────────────────
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+ssl/
+
+# ── AWS / Cloud credentials ────────────────────────────────
+.aws/
+credentials
+serviceAccountKey.json
+
+# ── Docker ─────────────────────────────────────────────────
+docker-compose.override.yml
+
+# ── OS files ───────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ── Editor ─────────────────────────────────────────────────
+.vscode/
+.idea/
+*.iml
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.swp
+*.swo
+*~
+
+# ── Testing & coverage ─────────────────────────────────────
+coverage/
+.nyc_output/
+*.lcov
+jest-results/
+
+# ── Uploads / temp / cache ─────────────────────────────────
+uploads/
+tmp/
+temp/
+.cache/
+.temp/
+
+# ── PM2 (process manager) ──────────────────────────────────
+.pm2/
+ecosystem.config.js.bak
+
+# ── TypeScript (if added later) ────────────────────────────
+*.tsbuildinfo
