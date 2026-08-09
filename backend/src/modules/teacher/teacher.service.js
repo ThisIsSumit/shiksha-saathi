@@ -78,11 +78,14 @@ const updateLessonPlan = async (teacherId, planId, data) => {
     [data.title, data.topic, JSON.stringify(data.content_json), data.date_for, planId, teacherId]
   );
   if (!rows[0]) throw Object.assign(new Error('Lesson plan not found'), { statusCode: 404 });
+  // Invalidate cached lesson plan lists for this teacher
+  try { await delPattern(`lessonplans:${teacherId}:*`); } catch (err) { logger.warn('Failed to clear lessonplans cache', { err: err.message }); }
   return rows[0];
 };
 
 const deleteLessonPlan = async (teacherId, planId) => {
   await db.query('DELETE FROM lesson_plans WHERE id=$1 AND teacher_id=$2', [planId, teacherId]);
+  try { await delPattern(`lessonplans:${teacherId}:*`); } catch (err) { logger.warn('Failed to clear lessonplans cache', { err: err.message }); }
 };
 
 // ── Attendance ─────────────────────────────────────────────────────────────
@@ -191,29 +194,112 @@ const getDashboard = async (teacherId) => {
   return withCache(`teacher:dashboard:${teacherId}`, async () => {
     const today = new Date().toISOString().split('T')[0];
 
-    const [classData, todayAttendance, recentPlans] = await Promise.all([
-      db.query(
-        `SELECT c.id, c.grade, c.section, COUNT(s.id)::int as students
-         FROM classes c LEFT JOIN students s ON s.class_id=c.id
-         WHERE c.teacher_id=$1 GROUP BY c.id`, [teacherId]
-      ),
-      db.query(
-        `SELECT COUNT(*) FILTER (WHERE a.status='present')::int as present,
+    // basic class and student counts
+    const classData = await db.query(
+      `SELECT c.id, c.grade, c.section, c.name, COUNT(s.id)::int as students
+       FROM classes c LEFT JOIN students s ON s.class_id=c.id
+       WHERE c.teacher_id=$1 GROUP BY c.id ORDER BY c.grade, c.section`, [teacherId]
+    );
+
+    const studentCount = classData.rows.reduce((sum, r) => sum + (r.students || 0), 0);
+
+    // today's attendance summary
+    const todayAttendance = await db.query(
+      `SELECT COUNT(*) FILTER (WHERE a.status='present')::int as present,
+              COUNT(*) FILTER (WHERE a.status='absent')::int as absent,
+              COUNT(*)::int as total
+       FROM attendance a JOIN classes c ON c.id=a.class_id
+       WHERE c.teacher_id=$1 AND a.date=$2`, [teacherId, today]
+    );
+    const present = (todayAttendance.rows[0] && todayAttendance.rows[0].present) || 0;
+    const total = (todayAttendance.rows[0] && todayAttendance.rows[0].total) || 0;
+    const attendancePct = total ? Math.round((present / total) * 1000) / 10 : null;
+
+    // lessons scheduled for today
+    const lessonsToday = await db.query(
+      `SELECT lp.id, lp.title, lp.topic, lp.date_for, c.id as class_id, c.grade, c.section
+       FROM lesson_plans lp JOIN classes c ON c.id = lp.class_id
+       WHERE lp.teacher_id=$1 AND lp.date_for=$2 ORDER BY lp.date_for, lp.created_at`, [teacherId, today]
+    );
+
+    // students needing attention (low recent quiz scores or low attendance in 30 days)
+    const studentsNeed = await db.query(
+      `SELECT s.id, u.name, s.roll_number,
+              COALESCE(q.avg_pct,0) as avg_score,
+              COALESCE(a.att_pct,0) as attendance_pct
+       FROM students s JOIN users u ON u.id = s.user_id
+       JOIN classes c ON c.id = s.class_id AND c.teacher_id = $1
+       LEFT JOIN (
+         SELECT student_id, ROUND(AVG(percentage),1) as avg_pct
+         FROM quiz_attempts WHERE submitted_at >= NOW() - '90 days'::interval GROUP BY student_id
+       ) q ON q.student_id = s.id
+       LEFT JOIN (
+         SELECT student_id, ROUND( COUNT(*) FILTER (WHERE status='present')::numeric / NULLIF(COUNT(*),0) * 100,1) as att_pct
+         FROM attendance WHERE date >= NOW() - '30 days'::interval GROUP BY student_id
+       ) a ON a.student_id = s.id
+       WHERE COALESCE(q.avg_pct,100) < 50 OR COALESCE(a.att_pct,100) < 75
+       ORDER BY COALESCE(q.avg_pct,100) ASC, COALESCE(a.att_pct,100) ASC LIMIT 25`, [teacherId]
+    );
+
+    // last synced timestamp: latest update among lessons, attendance, worksheets
+    const lastSyncedRes = await db.query(
+      `SELECT GREATEST(
+         COALESCE(MAX(lp.updated_at), TIMESTAMP '1970-01-01'),
+         COALESCE(MAX(a.marked_at), TIMESTAMP '1970-01-01'),
+         COALESCE(MAX(w.created_at), TIMESTAMP '1970-01-01')
+       ) as last_synced
+       FROM classes c
+       LEFT JOIN lesson_plans lp ON lp.teacher_id = $1
+       LEFT JOIN attendance a ON a.class_id = c.id
+       LEFT JOIN worksheets w ON w.teacher_id = $1
+       WHERE c.teacher_id = $1`, [teacherId]
+    );
+
+    const lastSynced = lastSyncedRes.rows[0] ? lastSyncedRes.rows[0].last_synced : null;
+
+    // Detailed student list for teacher (limit to 500)
+    const studentsDetail = await db.query(
+      `SELECT s.id, u.name, s.roll_number, c.id as class_id, c.grade, c.section,
+              COALESCE(q.avg_pct,0) as avg_score,
+              COALESCE(a.att_pct,0) as attendance_pct
+       FROM students s JOIN users u ON u.id = s.user_id
+       JOIN classes c ON c.id = s.class_id AND c.teacher_id = $1
+       LEFT JOIN (
+         SELECT student_id, ROUND(AVG(percentage),1) as avg_pct
+         FROM quiz_attempts WHERE submitted_at >= NOW() - '90 days'::interval GROUP BY student_id
+       ) q ON q.student_id = s.id
+       LEFT JOIN (
+         SELECT student_id, ROUND( COUNT(*) FILTER (WHERE status='present')::numeric / NULLIF(COUNT(*),0) * 100,1) as att_pct
+         FROM attendance WHERE date >= NOW() - '30 days'::interval GROUP BY student_id
+       ) a ON a.student_id = s.id
+       ORDER BY c.grade, c.section, s.roll_number LIMIT 500`, [teacherId]
+    );
+
+    // attendance summary by class for today
+    const classIds = classData.rows.map((r) => r.id);
+    let attendanceByClass = [];
+    if (classIds.length) {
+      const attRes = await db.query(
+        `SELECT a.class_id,
+                COUNT(*) FILTER (WHERE a.status='present')::int as present,
                 COUNT(*) FILTER (WHERE a.status='absent')::int as absent,
                 COUNT(*)::int as total
-         FROM attendance a JOIN classes c ON c.id=a.class_id
-         WHERE c.teacher_id=$1 AND a.date=$2`, [teacherId, today]
-      ),
-      db.query(
-        `SELECT title, topic, date_for FROM lesson_plans
-         WHERE teacher_id=$1 ORDER BY created_at DESC LIMIT 5`, [teacherId]
-      ),
-    ]);
+         FROM attendance a
+         WHERE a.date=$1 AND a.class_id = ANY($2::uuid[])
+         GROUP BY a.class_id`, [today, classIds]
+      );
+      attendanceByClass = attRes.rows;
+    }
 
     return {
-      classes: classData.rows,
-      todayAttendance: todayAttendance.rows[0],
-      recentPlans: recentPlans.rows,
+      student_count: studentCount,
+      attendance_pct: attendancePct,
+      lessons_today: lessonsToday.rows,
+      todays_class_schedule: classData.rows,
+      attendance_by_class: attendanceByClass,
+      students: studentsDetail.rows,
+      students_needing_attention: studentsNeed.rows,
+      last_synced: lastSynced,
     };
   }, TTL.SHORT);
 };

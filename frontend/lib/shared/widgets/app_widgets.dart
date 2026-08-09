@@ -22,9 +22,18 @@ class AppTextField extends StatelessWidget {
   final void Function(String)? onChanged;
 
   const AppTextField({
-    super.key, required this.controller, required this.label, required this.hint,
-    this.keyboardType, this.obscureText = false, this.prefixIcon,
-    this.suffixIcon, this.validator, this.maxLines = 1, this.enabled = true, this.onChanged,
+    super.key,
+    required this.controller,
+    required this.label,
+    required this.hint,
+    this.keyboardType,
+    this.obscureText = false,
+    this.prefixIcon,
+    this.suffixIcon,
+    this.validator,
+    this.maxLines = 1,
+    this.enabled = true,
+    this.onChanged,
   });
 
   @override
@@ -39,8 +48,11 @@ class AppTextField extends StatelessWidget {
       validator: validator,
       style: const TextStyle(fontSize: 15, color: AppColors.textPrimary),
       decoration: InputDecoration(
-        labelText: label, hintText: hint,
-        prefixIcon: prefixIcon != null ? Icon(prefixIcon, color: AppColors.textMuted, size: 20) : null,
+        labelText: label,
+        hintText: hint,
+        prefixIcon: prefixIcon != null
+            ? Icon(prefixIcon, color: AppColors.textMuted, size: 20)
+            : null,
         suffixIcon: suffixIcon,
       ),
     );
@@ -57,8 +69,13 @@ class AppButton extends StatelessWidget {
   final IconData? icon;
 
   const AppButton({
-    super.key, required this.label, this.onPressed,
-    this.isLoading = false, this.outlined = false, this.color, this.icon,
+    super.key,
+    required this.label,
+    this.onPressed,
+    this.isLoading = false,
+    this.outlined = false,
+    this.color,
+    this.icon,
   });
 
   @override
@@ -67,22 +84,32 @@ class AppButton extends StatelessWidget {
     if (outlined) {
       return OutlinedButton(
         onPressed: isLoading ? null : onPressed,
-        style: OutlinedButton.styleFrom(foregroundColor: bg, side: BorderSide(color: bg, width: 1.5)),
+        style: OutlinedButton.styleFrom(
+            foregroundColor: bg, side: BorderSide(color: bg, width: 1.5)),
         child: _child(bg),
       );
     }
     return ElevatedButton(
       onPressed: isLoading ? null : onPressed,
-      style: ElevatedButton.styleFrom(backgroundColor: bg, disabledBackgroundColor: bg.withOpacity(0.5)),
+      style: ElevatedButton.styleFrom(
+          backgroundColor: bg, disabledBackgroundColor: bg.withOpacity(0.5)),
       child: _child(Colors.white),
     );
   }
 
   Widget _child(Color textColor) => isLoading
-      ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: textColor))
+      ? SizedBox(
+          width: 20,
+          height: 20,
+          child: CircularProgressIndicator(strokeWidth: 2, color: textColor))
       : Row(mainAxisSize: MainAxisSize.min, children: [
-          if (icon != null) ...[Icon(icon, size: 18, color: textColor), const SizedBox(width: 8)],
-          Text(label, style: TextStyle(color: textColor, fontWeight: FontWeight.w600, fontSize: 15)),
+          if (icon != null) ...[
+            Icon(icon, size: 18, color: textColor),
+            const SizedBox(width: 8)
+          ],
+          Text(label,
+              style: TextStyle(
+                  color: textColor, fontWeight: FontWeight.w600, fontSize: 15)),
         ]);
 }
 
@@ -93,7 +120,8 @@ class AppCard extends StatelessWidget {
   final Color? color;
   final VoidCallback? onTap;
 
-  const AppCard({super.key, required this.child, this.padding, this.color, this.onTap});
+  const AppCard(
+      {super.key, required this.child, this.padding, this.color, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -106,7 +134,12 @@ class AppCard extends StatelessWidget {
           color: color ?? AppColors.surfaceCard,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: AppColors.border, width: 0.5),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withOpacity(0.02),
+                blurRadius: 8,
+                offset: const Offset(0, 2))
+          ],
         ),
         child: child,
       ),
@@ -120,7 +153,13 @@ class StatChip extends StatelessWidget {
   final IconData icon;
   final Color color;
 
-  const StatChip({super.key, required this.value, required this.label, required this.labelEn, required this.icon, required this.color});
+  const StatChip(
+      {super.key,
+      required this.value,
+      required this.label,
+      required this.labelEn,
+      required this.icon,
+      required this.color});
 
   @override
   Widget build(BuildContext context) {
@@ -135,8 +174,11 @@ class StatChip extends StatelessWidget {
         child: Column(children: [
           Icon(icon, color: color, size: 20),
           const SizedBox(height: 4),
-          Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: color)),
-          Text(label, style: const TextStyle(fontSize: 10, color: AppColors.textMuted)),
+          Text(value,
+              style: TextStyle(
+                  fontSize: 18, fontWeight: FontWeight.w700, color: color)),
+          Text(label,
+              style: const TextStyle(fontSize: 10, color: AppColors.textMuted)),
         ]),
       ),
     );
@@ -148,18 +190,27 @@ class SectionHeader extends StatelessWidget {
   final String title, subtitle;
   final VoidCallback? onSeeAll;
 
-  const SectionHeader({super.key, required this.title, required this.subtitle, this.onSeeAll});
+  const SectionHeader(
+      {super.key, required this.title, required this.subtitle, this.onSeeAll});
 
   @override
   Widget build(BuildContext context) {
     return Row(children: [
       Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
-        Text(subtitle, style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
+        Text(title,
+            style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary)),
+        Text(subtitle,
+            style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
       ]),
       const Spacer(),
       if (onSeeAll != null)
-        TextButton(onPressed: onSeeAll, child: const Text('See all', style: TextStyle(fontSize: 12, color: AppColors.primary))),
+        TextButton(
+            onPressed: onSeeAll,
+            child: const Text('See all',
+                style: TextStyle(fontSize: 12, color: AppColors.primary))),
     ]);
   }
 }
@@ -168,14 +219,22 @@ class SectionHeader extends StatelessWidget {
 class SnackHelper {
   static void error(BuildContext context, String msg) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Row(children: [const Icon(Icons.error_outline, color: Colors.white, size: 18), const SizedBox(width: 8), Expanded(child: Text(msg))]),
+      content: Row(children: [
+        const Icon(Icons.error_outline, color: Colors.white, size: 18),
+        const SizedBox(width: 8),
+        Expanded(child: Text(msg))
+      ]),
       backgroundColor: AppColors.error,
     ));
   }
 
   static void success(BuildContext context, String msg) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Row(children: [const Icon(Icons.check_circle_outline, color: Colors.white, size: 18), const SizedBox(width: 8), Expanded(child: Text(msg))]),
+      content: Row(children: [
+        const Icon(Icons.check_circle_outline, color: Colors.white, size: 18),
+        const SizedBox(width: 8),
+        Expanded(child: Text(msg))
+      ]),
       backgroundColor: AppColors.success,
     ));
   }
@@ -189,7 +248,8 @@ class SnackHelper {
 class AiChatSheet extends StatefulWidget {
   final String role;
   const AiChatSheet({super.key, required this.role});
-  @override State<AiChatSheet> createState() => _AiChatSheetState();
+  @override
+  State<AiChatSheet> createState() => _AiChatSheetState();
 }
 
 class _AiChatSheetState extends State<AiChatSheet> {
@@ -201,33 +261,56 @@ class _AiChatSheetState extends State<AiChatSheet> {
   Future<void> _send() async {
     final q = _ctr.text.trim();
     if (q.isEmpty) return;
-    setState(() { _msgs.add({'role': 'user', 'text': q}); _loading = true; });
+    setState(() {
+      _msgs.add({'role': 'user', 'text': q});
+      _loading = true;
+    });
     _ctr.clear();
     _scrollBottom();
 
     try {
-      final endpoint = widget.role == 'parent' ? '/ai/parent-assistant' : '/ai/doubt';
-      final res = await ApiClient.instance.post(endpoint, data: {'question': q, 'language': 'hi'});
+      final endpoint =
+          widget.role == 'parent' ? '/ai/parent-assistant' : '/ai/doubt';
+      final res = await ApiClient.instance
+          .post(endpoint, data: {'question': q, 'language': 'hi'});
       final answer = res.data['data']['answer'] as String;
-      setState(() { _msgs.add({'role': 'ai', 'text': answer}); _loading = false; });
+      setState(() {
+        _msgs.add({'role': 'ai', 'text': answer});
+        _loading = false;
+      });
       _scrollBottom();
     } catch (e) {
-      setState(() { _msgs.add({'role': 'ai', 'text': 'माफ़ करें, कुछ गड़बड़ हो गई। / Sorry, something went wrong.'}); _loading = false; });
+      setState(() {
+        _msgs.add({
+          'role': 'ai',
+          'text': 'माफ़ करें, कुछ गड़बड़ हो गई। / Sorry, something went wrong.'
+        });
+        _loading = false;
+      });
     }
   }
 
   void _scrollBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scroll.hasClients) _scroll.animateTo(_scroll.position.maxScrollExtent, duration: 300.ms, curve: Curves.easeOut);
+      if (_scroll.hasClients)
+        _scroll.animateTo(_scroll.position.maxScrollExtent,
+            duration: 300.ms, curve: Curves.easeOut);
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final greeting = widget.role == 'teacher' ? 'AI सहायक' : widget.role == 'parent' ? 'अभिभावक सहायक' : 'AI Study Buddy';
+    final greeting = widget.role == 'teacher'
+        ? 'AI सहायक'
+        : widget.role == 'parent'
+            ? 'अभिभावक सहायक'
+            : 'AI Study Buddy';
 
     return DraggableScrollableSheet(
-      initialChildSize: 0.85, maxChildSize: 0.95, minChildSize: 0.5, expand: false,
+      initialChildSize: 0.85,
+      maxChildSize: 0.95,
+      minChildSize: 0.5,
+      expand: false,
       builder: (_, ctrl) => Container(
         decoration: const BoxDecoration(
           color: AppColors.surfaceCard,
@@ -235,74 +318,102 @@ class _AiChatSheetState extends State<AiChatSheet> {
         ),
         child: Column(children: [
           const SizedBox(height: 8),
-          Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2))),
+          Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(2))),
           Padding(
             padding: const EdgeInsets.all(16),
             child: Row(children: [
-              Container(width: 36, height: 36, decoration: BoxDecoration(color: AppColors.primaryPale, borderRadius: BorderRadius.circular(10)),
-                child: const Icon(Icons.smart_toy_rounded, color: AppColors.primary, size: 20)),
+              Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                      color: AppColors.primaryPale,
+                      borderRadius: BorderRadius.circular(10)),
+                  child: const Icon(Icons.smart_toy_rounded,
+                      color: AppColors.primary, size: 20)),
               const SizedBox(width: 10),
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(greeting, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
-                const Text('हिंदी में पूछें · Ask in Hindi', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                Text(greeting,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w600, fontSize: 15)),
+                const Text('हिंदी में पूछें · Ask in Hindi',
+                    style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
               ]),
             ]),
           ),
           const Divider(height: 1),
-
           Expanded(
             child: _msgs.isEmpty
-                ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+                ? Center(
+                    child: Column(mainAxisSize: MainAxisSize.min, children: [
                     const Text('🤖', style: TextStyle(fontSize: 40)),
                     const SizedBox(height: 12),
-                    Text('कोई भी सवाल पूछें\nAsk me anything', textAlign: TextAlign.center,
-                        style: TextStyle(color: AppColors.textSecondary, height: 1.6)),
+                    Text('कोई भी सवाल पूछें\nAsk me anything',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            color: AppColors.textSecondary, height: 1.6)),
                   ]).animate().fadeIn())
                 : ListView.builder(
-                    controller: ctrl, padding: const EdgeInsets.all(16),
+                    controller: ctrl,
+                    padding: const EdgeInsets.all(16),
                     itemCount: _msgs.length + (_loading ? 1 : 0),
                     itemBuilder: (_, i) {
                       if (i == _msgs.length) return _TypingIndicator();
                       final m = _msgs[i];
                       final isUser = m['role'] == 'user';
                       return Align(
-                        alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+                        alignment: isUser
+                            ? Alignment.centerRight
+                            : Alignment.centerLeft,
                         child: Container(
-                          constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.78),
+                          constraints: BoxConstraints(
+                              maxWidth:
+                                  MediaQuery.of(context).size.width * 0.84),
                           margin: const EdgeInsets.only(bottom: 10),
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 10),
                           decoration: BoxDecoration(
-                            color: isUser ? AppColors.primary : AppColors.surface,
+                            color:
+                                isUser ? AppColors.primary : AppColors.surface,
                             borderRadius: BorderRadius.only(
-                              topLeft: const Radius.circular(14), topRight: const Radius.circular(14),
+                              topLeft: const Radius.circular(14),
+                              topRight: const Radius.circular(14),
                               bottomLeft: Radius.circular(isUser ? 14 : 4),
                               bottomRight: Radius.circular(isUser ? 4 : 14),
                             ),
-                            border: isUser ? null : Border.all(color: AppColors.border),
+                            border: isUser
+                                ? null
+                                : Border.all(color: AppColors.border),
                           ),
-                          child: Text(m['text']!, style: TextStyle(
-                            color: isUser ? Colors.white : AppColors.textPrimary, fontSize: 14, height: 1.5,
-                          )),
+                          child: ParsedMessageContent(
+                              text: m['text']!, isUser: isUser),
                         ).animate().fadeIn(duration: 200.ms).slideY(begin: 0.2),
                       );
                     },
                   ),
           ),
-
           Container(
-            padding: EdgeInsets.fromLTRB(12, 8, 12, MediaQuery.of(context).viewInsets.bottom + 16),
+            padding: EdgeInsets.fromLTRB(
+                12, 8, 12, MediaQuery.of(context).viewInsets.bottom + 16),
             decoration: const BoxDecoration(
-              border: Border(top: BorderSide(color: AppColors.border, width: 0.5)),
+              border:
+                  Border(top: BorderSide(color: AppColors.border, width: 0.5)),
             ),
             child: Row(children: [
               Expanded(
                 child: TextField(
                   controller: _ctr,
-                  maxLines: 3, minLines: 1,
+                  maxLines: 3,
+                  minLines: 1,
                   decoration: const InputDecoration(
                     hintText: 'कोई भी सवाल पूछें / Ask anything...',
                     border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   ),
                   onSubmitted: (_) => _send(),
                 ),
@@ -311,9 +422,13 @@ class _AiChatSheetState extends State<AiChatSheet> {
               GestureDetector(
                 onTap: _send,
                 child: Container(
-                  width: 44, height: 44,
-                  decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(12)),
-                  child: const Icon(Icons.send_rounded, color: Colors.white, size: 20),
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: BorderRadius.circular(12)),
+                  child: const Icon(Icons.send_rounded,
+                      color: Colors.white, size: 20),
                 ),
               ),
             ]),
@@ -324,7 +439,221 @@ class _AiChatSheetState extends State<AiChatSheet> {
   }
 
   @override
-  void dispose() { _ctr.dispose(); _scroll.dispose(); super.dispose(); }
+  void dispose() {
+    _ctr.dispose();
+    _scroll.dispose();
+    super.dispose();
+  }
+}
+
+class ParsedMessageContent extends StatelessWidget {
+  final String text;
+  final bool isUser;
+
+  const ParsedMessageContent(
+      {super.key, required this.text, required this.isUser});
+
+  @override
+  Widget build(BuildContext context) {
+    final blockLines =
+        text.split('\n').map((line) => line.trimRight()).toList();
+    final widgets = <Widget>[];
+    final tableLines = <String>[];
+
+    for (final rawLine in blockLines) {
+      final line = rawLine.trim();
+      if (line.isEmpty) {
+        if (tableLines.isNotEmpty) {
+          widgets.add(_buildTable(tableLines));
+          tableLines.clear();
+        }
+        if (widgets.isNotEmpty && widgets.last is SizedBox) {
+          continue;
+        }
+        widgets.add(const SizedBox(height: 4));
+        continue;
+      }
+
+      if (_looksLikeTableLine(line)) {
+        tableLines.add(line);
+        continue;
+      }
+
+      if (tableLines.isNotEmpty) {
+        widgets.add(_buildTable(tableLines));
+        tableLines.clear();
+      }
+
+      if (line.startsWith('### ')) {
+        widgets.add(_buildHeading(line.substring(4), isUser));
+      } else if (line.startsWith('## ')) {
+        widgets.add(_buildHeading(line.substring(3), isUser));
+      } else if (line.startsWith('- ') || line.startsWith('* ')) {
+        widgets.add(_buildBullet(line.substring(2), isUser));
+      } else if (RegExp(r'^\d+\.\s').hasMatch(line)) {
+        widgets.add(_buildBullet(
+            line.replaceFirst(RegExp(r'^\d+\.\s'), ''), isUser,
+            isNumbered: true));
+      } else {
+        widgets.add(_buildParagraph(line, isUser));
+      }
+    }
+
+    if (tableLines.isNotEmpty) {
+      widgets.add(_buildTable(tableLines));
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: widgets.map((w) => w).toList(),
+    );
+  }
+
+  Widget _buildHeading(String text, bool isUser) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 4, bottom: 2),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: isUser ? Colors.white : AppColors.textPrimary,
+          fontWeight: FontWeight.w700,
+          fontSize: 15,
+          height: 1.4,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBullet(String text, bool isUser, {bool isNumbered = false}) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 2, bottom: 2),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+              width: 12,
+              child: Text(isNumbered ? '•' : '•',
+                  style: TextStyle(
+                      color: isUser ? Colors.white : AppColors.primary,
+                      fontWeight: FontWeight.w700))),
+          Expanded(child: _buildInlineRichText(text, isUser)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildParagraph(String text, bool isUser) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: _buildInlineRichText(text, isUser),
+    );
+  }
+
+  Widget _buildInlineRichText(String text, bool isUser) {
+    final matches = RegExp(r'\*\*(.+?)\*\*').allMatches(text);
+    if (matches.isEmpty) {
+      return Text(
+        text,
+        style: TextStyle(
+            color: isUser ? Colors.white : AppColors.textPrimary,
+            fontSize: 14,
+            height: 1.55),
+      );
+    }
+
+    final spans = <TextSpan>[];
+    var cursor = 0;
+    for (final match in matches) {
+      if (match.start > cursor) {
+        spans.add(TextSpan(
+            text: text.substring(cursor, match.start),
+            style: _baseStyle(isUser)));
+      }
+      spans.add(TextSpan(
+          text: match.group(1),
+          style: _baseStyle(isUser).copyWith(fontWeight: FontWeight.w700)));
+      cursor = match.end;
+    }
+
+    if (cursor < text.length) {
+      spans.add(
+          TextSpan(text: text.substring(cursor), style: _baseStyle(isUser)));
+    }
+
+    return RichText(text: TextSpan(children: spans));
+  }
+
+  TextStyle _baseStyle(bool isUser) => TextStyle(
+      color: isUser ? Colors.white : AppColors.textPrimary,
+      fontSize: 14,
+      height: 1.55);
+
+  bool _looksLikeTableLine(String line) =>
+      line.contains('|') && line.split('|').length >= 3;
+
+  Widget _buildTable(List<String> lines) {
+    final rows = <List<String>>[];
+    for (final line in lines) {
+      final trimmed = line.trim();
+      if (trimmed.isEmpty || _isSeparatorLine(trimmed)) continue;
+      final cells = trimmed
+          .split('|')
+          .map((v) => v.trim())
+          .where((v) => v.isNotEmpty)
+          .toList();
+      if (cells.isNotEmpty) {
+        rows.add(cells);
+      }
+    }
+
+    if (rows.length < 2) {
+      return const SizedBox.shrink();
+    }
+
+    final headers = rows.first;
+    final bodyRows = rows.skip(1).toList();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Table(
+          border: TableBorder.all(color: AppColors.border, width: 0.6),
+          defaultColumnWidth: const IntrinsicColumnWidth(),
+          children: [
+            TableRow(
+              children: headers
+                  .map((cell) => _tableCell(cell, isHeader: true))
+                  .toList(),
+            ),
+            ...bodyRows
+                .map((row) => TableRow(
+                    children: row.map((cell) => _tableCell(cell)).toList()))
+                .toList(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _tableCell(String text, {bool isHeader = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontWeight: isHeader ? FontWeight.w700 : FontWeight.w500,
+          color: isHeader ? AppColors.primary : AppColors.textPrimary,
+          fontSize: 13,
+        ),
+      ),
+    );
+  }
+
+  bool _isSeparatorLine(String line) {
+    final normalized = line.replaceAll('|', '');
+    return normalized.replaceAll('-', '').trim().isEmpty;
+  }
 }
 
 class _TypingIndicator extends StatelessWidget {
@@ -333,9 +662,14 @@ class _TypingIndicator extends StatelessWidget {
     return Row(children: [
       Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.border)),
+        decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.border)),
         child: Row(children: [
-          _Dot(delay: 0), _Dot(delay: 200), _Dot(delay: 400),
+          _Dot(delay: 0),
+          _Dot(delay: 200),
+          _Dot(delay: 400),
         ]),
       ),
     ]);
@@ -349,8 +683,19 @@ class _Dot extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 2),
-      width: 7, height: 7,
-      decoration: const BoxDecoration(color: AppColors.textMuted, shape: BoxShape.circle),
-    ).animate(onPlay: (c) => c.repeat()).moveY(begin: 0, end: -4, delay: Duration(milliseconds: delay), duration: 400.ms, curve: Curves.easeInOut).then().moveY(begin: -4, end: 0, duration: 400.ms, curve: Curves.easeInOut);
+      width: 7,
+      height: 7,
+      decoration: const BoxDecoration(
+          color: AppColors.textMuted, shape: BoxShape.circle),
+    )
+        .animate(onPlay: (c) => c.repeat())
+        .moveY(
+            begin: 0,
+            end: -4,
+            delay: Duration(milliseconds: delay),
+            duration: 400.ms,
+            curve: Curves.easeInOut)
+        .then()
+        .moveY(begin: -4, end: 0, duration: 400.ms, curve: Curves.easeInOut);
   }
 }

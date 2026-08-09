@@ -37,7 +37,31 @@ const LANG_NAMES = {
   te: 'Telugu (తెలుగు)', kn: 'Kannada (ಕನ್ನಡ)',
 };
 
-const stripCodeFences = (value = '') => String(value || '').replace(/```(?:json|javascript|js)?/gi, '').trim();
+const stripCodeFences = (value = '') => {
+  let s = String(value || '');
+  // remove code fences
+  s = s.replace(/```(?:json|javascript|js)?/gi, '');
+  // remove common header lines like Content-Type or Response Text
+  s = s.replace(/^\s*content-type:\s*.*$/gim, '');
+  s = s.replace(/^\s*response text:\s*/gim, '');
+  return s.trim();
+};
+
+// Helper to log responses returned to frontend for debugging
+const logFrontendResponse = (handler, response, meta = {}) => {
+  try {
+    const payload = typeof response === 'string' ? response : JSON.stringify(response, null, 2);
+    const metaStr = Object.keys(meta).length ? ` | ${JSON.stringify(meta)}` : '';
+    // logger (file + console in dev)
+    logger.info(`AI Response [${handler}]${metaStr}: ${typeof response === 'string' ? response : ''}`);
+    // Always print to stdout for immediate debugging
+    // Keep a compact one-line prefix then full payload on next line
+    console.log(`AI Response [${handler}]${metaStr}:`);
+    console.log(payload);
+  } catch (err) {
+    logger.error('Failed to log AI response', err);
+  }
+};
 
 const parseAndNormalizeJsonResponse = (raw = '') => {
   if (typeof raw !== 'string') return raw;
@@ -85,6 +109,14 @@ const normalizeTextResponse = (raw = '') => {
     .replace(/[\u00a0]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
+
+  // Convert markdown-style markers to simple HTML so callers can render bold/italic
+  // Bold first (so **text** doesn't get caught by the italic rule)
+  text = text
+    .replace(/\*\*(.+?)\*\*/gs, '<strong>$1</strong>')
+    .replace(/__(.+?)__/gs, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/gs, '<em>$1</em>')
+    .replace(/_(.+?)_/gs, '<em>$1</em>');
 
   return text;
 };
@@ -168,7 +200,9 @@ Return this exact JSON structure:
 }`;
 
     const raw = await callAI(systemPrompt, userMessage, userId, 'teacher', language);
-    return parseAndNormalizeJsonResponse(raw);
+    const parsed = parseAndNormalizeJsonResponse(raw);
+    logFrontendResponse('generateLessonPlan', parsed, { userId, grade, subject, topic, language });
+    return parsed;
   }, TTL.DAY);
 };
 
@@ -199,7 +233,9 @@ Return this exact JSON:
 }`;
 
     const raw = await callAI(systemPrompt, userMessage, userId, 'teacher', language);
-    return parseAndNormalizeJsonResponse(raw);
+    const parsed = parseAndNormalizeJsonResponse(raw);
+    logFrontendResponse('generateWorksheet', parsed, { userId, grade, subject, topic, language });
+    return parsed;
   }, TTL.DAY);
 };
 
@@ -215,7 +251,9 @@ const solveDoubt = async ({ question, subject, grade, role = 'student', language
        Always respond in ${langName}. Be practical and concise.`;
 
   const raw = await callAI(systemPrompt, question, userId, role, language);
-  return normalizeTextResponse(raw);
+  const normalized = normalizeTextResponse(raw);
+  logFrontendResponse('solveDoubt', normalized, { userId, role, grade, subject, language });
+  return normalized;
 };
 
 // ── Parent AI Assistant ────────────────────────────────────────────────────
@@ -243,7 +281,9 @@ If asked about the child's performance, use the data provided. Never disturb the
 ${studentContext}`;
 
   const raw = await callAI(systemPrompt, question, userId, 'parent', language);
-  return normalizeTextResponse(raw);
+  const normalized = normalizeTextResponse(raw);
+  logFrontendResponse('parentAssistant', normalized, { userId, studentId, language });
+  return normalized;
 };
 
 // ── Generate Parent SMS ────────────────────────────────────────────────────
@@ -254,7 +294,9 @@ Write in ${langName}. Keep it under 160 characters. Be warm and informative.`;
 
   const userMessage = `Today in Grade ${grade} ${subject} class, we covered: ${topic}. Homework: ${homework}. Write the parent message.`;
   const raw = await callAI(systemPrompt, userMessage, userId, 'teacher', language);
-  return normalizeTextResponse(raw);
+  const normalized = normalizeTextResponse(raw);
+  logFrontendResponse('generateParentSms', normalized, { userId, grade, subject, language });
+  return normalized;
 };
 
 module.exports = {

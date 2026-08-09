@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -121,10 +122,25 @@ class _SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<_SplashScreen> {
+  Timer? _fallbackTimer;
+
   @override
   void initState() {
     super.initState();
     context.read<AuthBloc>().add(AuthCheckSession());
+    _fallbackTimer = Timer(const Duration(seconds: 2), () {
+      if (!mounted) return;
+      final state = context.read<AuthBloc>().state;
+      if (state is AuthInitial || state is AuthLoading) {
+        context.read<AuthBloc>().add(AuthSkipCheck());
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _fallbackTimer?.cancel();
+    super.dispose();
   }
 
   @override

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import '../../data/models/auth_model.dart';
@@ -52,6 +53,8 @@ class AuthResetPassword extends AuthEvent {
 
 class AuthLogout extends AuthEvent {}
 
+class AuthSkipCheck extends AuthEvent {}
+
 // ── States ─────────────────────────────────────────────────────────────────
 abstract class AuthState extends Equatable {
   @override
@@ -105,13 +108,15 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AuthForgotPassword>(_onForgotPassword);
     on<AuthResetPassword>(_onResetPassword);
     on<AuthLogout>(_onLogout);
+    on<AuthSkipCheck>(_onSkipCheck);
   }
 
   Future<void> _onCheckSession(
       AuthCheckSession e, Emitter<AuthState> emit) async {
     emit(AuthLoading());
     try {
-      final hasSession = await _repo.hasValidSession();
+      final hasSession =
+          await _repo.hasValidSession().timeout(const Duration(seconds: 3));
       if (hasSession) {
         final user = await _repo.getStoredUser();
         if (user != null) {
@@ -119,6 +124,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           return;
         }
       }
+      emit(AuthUnauthenticated());
+    } on TimeoutException {
       emit(AuthUnauthenticated());
     } catch (_) {
       emit(AuthUnauthenticated());
@@ -191,6 +198,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
   Future<void> _onLogout(AuthLogout e, Emitter<AuthState> emit) async {
     await _repo.logout();
+    emit(AuthUnauthenticated());
+  }
+
+  Future<void> _onSkipCheck(AuthSkipCheck e, Emitter<AuthState> emit) async {
     emit(AuthUnauthenticated());
   }
 

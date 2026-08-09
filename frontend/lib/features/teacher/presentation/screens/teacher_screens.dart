@@ -1,8 +1,11 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shiksha_saathi/features/auth/presentation/bloc/auth_bloc.dart';
+import '../../../../core/network/api_client.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/widgets/app_card.dart';
 import '../../../../shared/widgets/stat_chip.dart';
@@ -143,8 +146,101 @@ class TeacherShell extends StatelessWidget {
 // ════════════════════════════════════════════════════════════
 // TEACHER DASHBOARD SCREEN
 // ════════════════════════════════════════════════════════════
-class TeacherDashboardScreen extends StatelessWidget {
+class TeacherDashboardScreen extends StatefulWidget {
   const TeacherDashboardScreen({super.key});
+
+  @override
+  State<TeacherDashboardScreen> createState() => _TeacherDashboardScreenState();
+}
+
+class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
+  bool _loading = true;
+  String? _error;
+  Map<String, dynamic>? _dashboardData;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDashboardData();
+  }
+
+  Future<void> _loadDashboardData() async {
+    if (!mounted) return;
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+
+    try {
+      final res = await ApiClient.instance.get('/teacher/dashboard');
+      final payload = res.data is Map
+          ? Map<String, dynamic>.from(res.data)
+          : <String, dynamic>{};
+      final data = payload['data'];
+      if (!mounted) return;
+      if (data is Map) {
+        setState(() {
+          _dashboardData = Map<String, dynamic>.from(data);
+          _loading = false;
+        });
+      } else {
+        setState(() {
+          // _dashboardData = _buildFallbackData();
+          _loading = false;
+        });
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        // _dashboardData = _buildFallbackData();
+        _loading = false;
+        _error = 'Live sync unavailable. Showing latest available preview.';
+      });
+    }
+  }
+
+  // Map<String, dynamic> _buildFallbackData() {
+  //   return {
+  //     'stats': {
+  //       'studentsCount': 28,
+  //       'attendance': 92,
+  //       'lessonsToday': 3,
+  //     },
+  //     'schedule': [
+  //       {
+  //         'time': '08:00 AM',
+  //         'subject': 'गणित',
+  //         'topic': 'भिन्न',
+  //         'grade': 'Class 4',
+  //         'done': true
+  //       },
+  //       {
+  //         'time': '10:00 AM',
+  //         'subject': 'हिंदी',
+  //         'topic': 'संज्ञा',
+  //         'grade': 'Class 4',
+  //         'done': false
+  //       },
+  //       {
+  //         'time': '12:00 PM',
+  //         'subject': 'Science',
+  //         'topic': 'Plants',
+  //         'grade': 'Class 5',
+  //         'done': false
+  //       },
+  //     ],
+  //     'needsAttention': [
+  //       {'name': 'Rahul Kumar', 'issue': 'गणित में कमज़ोर', 'progress': 0.45},
+  //       {
+  //         'name': 'Priya Sharma',
+  //         'issue': '5 दिन अनुपस्थित',
+  //         'progress': 0.0,
+  //         'absent': true
+  //       },
+  //     ],
+  //     'lastSyncedAt': DateTime.now().toIso8601String(),
+  //   };
+  // }
 
   Future<void> _confirmLogout(BuildContext context) async {
     final shouldLogout = await showDialog<bool>(
@@ -172,6 +268,9 @@ class TeacherDashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final authState = context.watch<AuthBloc>().state;
+    final userName =
+        authState is AuthAuthenticated ? authState.user.name : 'Teacher';
     final now = DateTime.now();
     final greeting = now.hour < 12
         ? 'Good Morning\nसुप्रभात'
@@ -179,215 +278,311 @@ class TeacherDashboardScreen extends StatelessWidget {
             ? 'Good Afternoon\nनमस्कार'
             : 'Good Evening\nशुभ संध्या';
 
+    final statsMap = (_dashboardData?['stats'] is Map)
+        ? Map<String, dynamic>.from(_dashboardData!['stats'])
+        : <String, dynamic>{};
+    final studentsCount =
+        statsMap['studentsCount'] ?? statsMap['students_count'] ?? 0;
+    final attendanceValue =
+        statsMap['attendance'] ?? statsMap['attendancePercent'] ?? 0;
+    final lessonsToday =
+        statsMap['lessonsToday'] ?? statsMap['lessons_today'] ?? 0;
+
+    final scheduleList = (_dashboardData?['schedule'] is List)
+        ? (_dashboardData!['schedule'] as List)
+            .whereType<Map>()
+            .map((e) => Map<String, dynamic>.from(e))
+            .toList()
+        : <Map<String, dynamic>>[];
+    final attentionList = (_dashboardData?['needsAttention'] is List)
+        ? (_dashboardData!['needsAttention'] as List)
+            .whereType<Map>()
+            .map((e) => Map<String, dynamic>.from(e))
+            .toList()
+        : <Map<String, dynamic>>[];
+
+    final lastSyncedAt =
+        _dashboardData?['lastSyncedAt'] ?? _dashboardData?['last_synced_at'];
+
     return Scaffold(
       backgroundColor: AppColors.surface,
-      body: CustomScrollView(
-        slivers: [
-          // ── Appbar ────────────────────────────────────────────
-          SliverAppBar(
-            pinned: true,
-            expandedHeight: 160,
-            backgroundColor: AppColors.primary,
-            flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [AppColors.primary, Color(0xFF2D8653)]),
-                ),
-                padding: const EdgeInsets.fromLTRB(20, 60, 20, 16),
-                child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(children: [
-                        CircleAvatar(
-                            radius: 22,
-                            backgroundColor: Colors.white.withOpacity(0.2),
-                            child: const Text('R',
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 18))),
-                        const SizedBox(width: 12),
-                        Expanded(
-                            child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                              Text(greeting,
-                                  style: const TextStyle(
-                                      color: Colors.white70,
-                                      fontSize: 12,
-                                      height: 1.4)),
-                              const Text('Ramesh Kumar',
-                                  style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600)),
-                            ])),
-                        IconButton(
-                            icon: const Icon(Icons.notifications_outlined,
-                                color: Colors.white),
-                            onPressed: () {}),
-                        PopupMenuButton<String>(
-                          icon: const Icon(Icons.more_vert_rounded,
-                              color: Colors.white),
-                          onSelected: (value) {
-                            if (value == 'logout') {
-                              _confirmLogout(context);
-                            }
-                          },
-                          itemBuilder: (_) => const [
-                            PopupMenuItem<String>(
-                              value: 'logout',
-                              child: Row(
-                                children: [
-                                  Icon(Icons.logout_rounded, size: 18),
-                                  SizedBox(width: 8),
-                                  Text('Logout'),
-                                ],
-                              ),
-                            ),
-                          ],
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
+              onRefresh: _loadDashboardData,
+              child: CustomScrollView(
+                slivers: [
+                  // ── Appbar ────────────────────────────────────────────
+                  SliverAppBar(
+                    pinned: true,
+                    expandedHeight: 180,
+                    backgroundColor: AppColors.primary,
+                    flexibleSpace: FlexibleSpaceBar(
+                      background: Container(
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [AppColors.primary, Color(0xFF2D8653)]),
                         ),
-                      ]),
-                    ]),
+                        padding: const EdgeInsets.fromLTRB(20, 60, 20, 16),
+                        child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(children: [
+                                CircleAvatar(
+                                    radius: 22,
+                                    backgroundColor:
+                                        Colors.white.withOpacity(0.2),
+                                    child: Text(
+                                        userName.isNotEmpty
+                                            ? userName[0].toUpperCase()
+                                            : 'T',
+                                        style: const TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 18))),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                    child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                      Text(greeting,
+                                          style: const TextStyle(
+                                              color: Colors.white70,
+                                              fontSize: 12,
+                                              height: 1.4)),
+                                      Text(userName,
+                                          style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w600)),
+                                    ])),
+                                IconButton(
+                                    icon: const Icon(Icons.refresh_rounded,
+                                        color: Colors.white),
+                                    tooltip: 'Refresh dashboard',
+                                    onPressed: _loadDashboardData),
+                                IconButton(
+                                    icon: const Icon(
+                                        Icons.notifications_outlined,
+                                        color: Colors.white),
+                                    onPressed: () {}),
+                                PopupMenuButton<String>(
+                                  icon: const Icon(Icons.more_vert_rounded,
+                                      color: Colors.white),
+                                  onSelected: (value) {
+                                    if (value == 'logout') {
+                                      _confirmLogout(context);
+                                    }
+                                  },
+                                  itemBuilder: (_) => const [
+                                    PopupMenuItem<String>(
+                                      value: 'logout',
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.logout_rounded, size: 18),
+                                          SizedBox(width: 8),
+                                          Text('Logout'),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ]),
+                              const SizedBox(height: 8),
+                              if (_error != null)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.14),
+                                    borderRadius: BorderRadius.circular(999),
+                                  ),
+                                  child: Text(
+                                    _error!,
+                                    style: const TextStyle(
+                                        color: Colors.white70, fontSize: 11),
+                                  ),
+                                ),
+                            ]),
+                      ),
+                    ),
+                  ),
+
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (lastSyncedAt != null)
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: Text(
+                                  'Last synced: ${lastSyncedAt.toString()}',
+                                  style: const TextStyle(
+                                      fontSize: 11, color: AppColors.textMuted),
+                                ),
+                              ),
+                            // ── Today stats ───────────────────────────────────
+                            Row(children: [
+                              StatChip(
+                                  value: studentsCount.toString(),
+                                  label: 'छात्र',
+                                  labelEn: 'Students',
+                                  icon: Icons.people_outlined,
+                                  color: AppColors.primary),
+                              const SizedBox(width: 10),
+                              StatChip(
+                                  value: '$attendanceValue%',
+                                  label: 'हाज़री',
+                                  labelEn: 'Attendance',
+                                  icon: Icons.check_circle_outline,
+                                  color: AppColors.success),
+                              const SizedBox(width: 10),
+                              StatChip(
+                                  value: lessonsToday.toString(),
+                                  label: 'पाठ',
+                                  labelEn: 'Lessons',
+                                  icon: Icons.book_outlined,
+                                  color: AppColors.saffron),
+                            ])
+                                .animate()
+                                .fadeIn(delay: 100.ms)
+                                .slideY(begin: 0.3),
+
+                            const SizedBox(height: 24),
+
+                            // ── Quick actions ─────────────────────────────────
+                            SectionHeader(
+                                title: 'त्वरित क्रिया',
+                                subtitle: 'Quick Actions'),
+                            const SizedBox(height: 12),
+                            GridView.count(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              crossAxisCount: 2,
+                              mainAxisSpacing: 10,
+                              crossAxisSpacing: 10,
+                              childAspectRatio: 1.6,
+                              children: [
+                                _QuickAction(
+                                    emoji: '📖',
+                                    title: 'AI पाठ योजना',
+                                    subtitle: 'Generate plan',
+                                    color: AppColors.primary,
+                                    onTap: () =>
+                                        context.go('/teacher/lessons')),
+                                _QuickAction(
+                                    emoji: '✅',
+                                    title: 'हाज़री लें',
+                                    subtitle: 'Mark attendance',
+                                    color: AppColors.success,
+                                    onTap: () =>
+                                        context.go('/teacher/attendance')),
+                                _QuickAction(
+                                    emoji: '📝',
+                                    title: 'कार्यपत्रक',
+                                    subtitle: 'Create worksheet',
+                                    color: AppColors.saffron,
+                                    onTap: () =>
+                                        context.go('/teacher/worksheets')),
+                                _QuickAction(
+                                    emoji: '💬',
+                                    title: 'SMS भेजें',
+                                    subtitle: 'Parent message',
+                                    color: AppColors.soil,
+                                    onTap: () => ScaffoldMessenger.of(context)
+                                        .showSnackBar(const SnackBar(
+                                            content: Text(
+                                                'SMS module will be available soon.')))),
+                              ],
+                            )
+                                .animate()
+                                .fadeIn(delay: 200.ms)
+                                .slideY(begin: 0.3),
+
+                            const SizedBox(height: 24),
+
+                            // ── Today's schedule ──────────────────────────────
+                            SectionHeader(
+                                title: 'आज का कार्यक्रम',
+                                subtitle: "Today's Schedule"),
+                            const SizedBox(height: 12),
+                            ...scheduleList.isEmpty
+                                ? [
+                                    const _NoDataCard(
+                                        text: 'No schedule available yet.'),
+                                  ]
+                                : scheduleList.asMap().entries.map((e) {
+                                    final item = e.value;
+                                    return _ScheduleItem(
+                                      time: item['time']?.toString() ?? '--',
+                                      subject: item['subject']?.toString() ??
+                                          'Subject',
+                                      topic: item['topic']?.toString() ?? '',
+                                      grade:
+                                          item['grade']?.toString() ?? 'Class',
+                                      done: item['done'] == true,
+                                    )
+                                        .animate(
+                                            delay: Duration(
+                                                milliseconds: 280 + e.key * 80))
+                                        .fadeIn()
+                                        .slideX(begin: 0.2);
+                                  }),
+
+                            const SizedBox(height: 24),
+
+                            // ── Struggling students alert ─────────────────────
+                            SectionHeader(
+                                title: 'ध्यान चाहिए',
+                                subtitle: 'Needs Attention'),
+                            const SizedBox(height: 12),
+                            AppCard(
+                              child: Column(children: [
+                                if (attentionList.isEmpty)
+                                  const Padding(
+                                    padding: EdgeInsets.all(12),
+                                    child: Text(
+                                        'No attention items at the moment.'),
+                                  )
+                                else
+                                  ...attentionList.asMap().entries.map((e) {
+                                    final item = e.value;
+                                    final isAbsence = item['absent'] == true;
+                                    return Column(
+                                      children: [
+                                        if (e.key > 0) const Divider(height: 1),
+                                        _StudentAlert(
+                                          name: item['name']?.toString() ??
+                                              'Student',
+                                          issue: item['issue']?.toString() ??
+                                              'Needs attention',
+                                          pct: (item['progress'] is num)
+                                              ? (item['progress'] as num)
+                                                  .toDouble()
+                                              : 0.0,
+                                          isAbsence: isAbsence,
+                                        ),
+                                      ],
+                                    );
+                                  }),
+                              ]),
+                            )
+                                .animate()
+                                .fadeIn(delay: 450.ms)
+                                .slideY(begin: 0.3),
+
+                            const SizedBox(height: 80),
+                          ]),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
-
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // ── Today stats ───────────────────────────────────
-                    Row(children: [
-                      StatChip(
-                          value: '28',
-                          label: 'छात्र',
-                          labelEn: 'Students',
-                          icon: Icons.people_outlined,
-                          color: AppColors.primary),
-                      const SizedBox(width: 10),
-                      StatChip(
-                          value: '92%',
-                          label: 'हाज़री',
-                          labelEn: 'Attendance',
-                          icon: Icons.check_circle_outline,
-                          color: AppColors.success),
-                      const SizedBox(width: 10),
-                      StatChip(
-                          value: '3',
-                          label: 'पाठ',
-                          labelEn: 'Lessons',
-                          icon: Icons.book_outlined,
-                          color: AppColors.saffron),
-                    ]).animate().fadeIn(delay: 100.ms).slideY(begin: 0.3),
-
-                    const SizedBox(height: 24),
-
-                    // ── Quick actions ─────────────────────────────────
-                    SectionHeader(
-                        title: 'त्वरित क्रिया', subtitle: 'Quick Actions'),
-                    const SizedBox(height: 12),
-                    GridView.count(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      crossAxisCount: 2,
-                      mainAxisSpacing: 10,
-                      crossAxisSpacing: 10,
-                      childAspectRatio: 1.6,
-                      children: [
-                        _QuickAction(
-                            emoji: '📖',
-                            title: 'AI पाठ योजना',
-                            subtitle: 'Generate plan',
-                            color: AppColors.primary,
-                            onTap: () => context.go('/teacher/lessons')),
-                        _QuickAction(
-                            emoji: '✅',
-                            title: 'हाज़री लें',
-                            subtitle: 'Mark attendance',
-                            color: AppColors.success,
-                            onTap: () => context.go('/teacher/attendance')),
-                        _QuickAction(
-                            emoji: '📝',
-                            title: 'कार्यपत्रक',
-                            subtitle: 'Create worksheet',
-                            color: AppColors.saffron,
-                            onTap: () => context.go('/teacher/worksheets')),
-                        _QuickAction(
-                            emoji: '💬',
-                            title: 'SMS भेजें',
-                            subtitle: 'Parent message',
-                            color: AppColors.soil,
-                            onTap: () => ScaffoldMessenger.of(context)
-                                .showSnackBar(const SnackBar(
-                                    content: Text(
-                                        'SMS module will be available soon.')))),
-                      ],
-                    ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.3),
-
-                    const SizedBox(height: 24),
-
-                    // ── Today's schedule ──────────────────────────────
-                    SectionHeader(
-                        title: 'आज का कार्यक्रम', subtitle: "Today's Schedule"),
-                    const SizedBox(height: 12),
-                    ...[
-                      _ScheduleItem(
-                          time: '8:00 AM',
-                          subject: 'गणित',
-                          topic: 'भिन्न',
-                          grade: 'Class 4',
-                          done: true),
-                      _ScheduleItem(
-                          time: '10:00 AM',
-                          subject: 'हिंदी',
-                          topic: 'संज्ञा',
-                          grade: 'Class 4',
-                          done: false),
-                      _ScheduleItem(
-                          time: '12:00 PM',
-                          subject: 'Science',
-                          topic: 'Plants',
-                          grade: 'Class 5',
-                          done: false),
-                    ].asMap().entries.map((e) => e.value
-                        .animate(
-                            delay: Duration(milliseconds: 280 + e.key * 80))
-                        .fadeIn()
-                        .slideX(begin: 0.2)),
-
-                    const SizedBox(height: 24),
-
-                    // ── Struggling students alert ─────────────────────
-                    SectionHeader(
-                        title: 'ध्यान चाहिए', subtitle: 'Needs Attention'),
-                    const SizedBox(height: 12),
-                    AppCard(
-                      child: Column(children: [
-                        _StudentAlert(
-                            name: 'Rahul Kumar',
-                            issue: 'गणित में कमज़ोर',
-                            pct: 0.45),
-                        const Divider(height: 1),
-                        _StudentAlert(
-                            name: 'Priya Sharma',
-                            issue: '5 दिन अनुपस्थित',
-                            pct: 0.0,
-                            isAbsence: true),
-                      ]),
-                    ).animate().fadeIn(delay: 450.ms).slideY(begin: 0.3),
-
-                    const SizedBox(height: 80),
-                  ]),
-            ),
-          ),
-        ],
-      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => showModalBottomSheet(
           context: context,
@@ -400,6 +595,26 @@ class TeacherDashboardScreen extends StatelessWidget {
         label: const Text('AI',
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
       ),
+    );
+  }
+}
+
+class _NoDataCard extends StatelessWidget {
+  final String text;
+
+  const _NoDataCard({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceCard,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Text(text,
+          style: const TextStyle(color: AppColors.textMuted, fontSize: 13)),
     );
   }
 }
@@ -697,6 +912,8 @@ class AttendanceScreen extends StatefulWidget {
 class _AttendanceScreenState extends State<AttendanceScreen> {
   final _today = DateTime.now();
   final Map<String, String> _status = {};
+  String? _editingAttendanceId;
+  final List<Map<String, dynamic>> _savedAttendances = [];
 
   final _students = [
     {'id': '1', 'name': 'Aarav Singh', 'roll': '01'},
@@ -710,6 +927,110 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   ];
 
   int get _presentCount => _status.values.where((v) => v == 'present').length;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedAttendances();
+  }
+
+  Future<void> _loadSavedAttendances() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getStringList('saved_attendance_records') ?? [];
+    if (!mounted) return;
+    setState(() {
+      _savedAttendances.clear();
+      _savedAttendances.addAll(raw.map((entry) {
+        final decoded = jsonDecode(entry);
+        return Map<String, dynamic>.from(decoded as Map);
+      }).toList());
+    });
+  }
+
+  Future<void> _persistSavedAttendances() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(
+      'saved_attendance_records',
+      _savedAttendances.map((record) => jsonEncode(record)).toList(),
+    );
+  }
+
+  Future<void> _saveAttendance() async {
+    if (_status.length != _students.length) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Please mark all students before saving.')),
+        );
+      }
+      return;
+    }
+
+    final id = _editingAttendanceId ??
+        DateTime.now().millisecondsSinceEpoch.toString();
+    final record = <String, dynamic>{
+      'id': id,
+      'date': '${_today.day}/${_today.month}/${_today.year}',
+      'className': 'Class 4-A',
+      'savedAt': DateTime.now().toIso8601String(),
+      'students': _students
+          .map((student) => {
+                'id': student['id'],
+                'name': student['name'],
+                'roll': student['roll'],
+                'status': _status[student['id']] ?? '',
+              })
+          .toList(),
+      'presentCount': _presentCount,
+      'absentCount': _status.values.where((v) => v == 'absent').length,
+      'lateCount': _status.values.where((v) => v == 'late').length,
+    };
+
+    final existingIndex =
+        _savedAttendances.indexWhere((item) => item['id'] == id);
+    if (existingIndex >= 0) {
+      _savedAttendances[existingIndex] = record;
+    } else {
+      _savedAttendances.insert(0, record);
+    }
+
+    await _persistSavedAttendances();
+    if (!mounted) return;
+    setState(() {
+      _editingAttendanceId = id;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('✅ Attendance saved!')),
+    );
+  }
+
+  void _loadAttendanceRecord(Map<String, dynamic> record) {
+    setState(() {
+      _status.clear();
+      _editingAttendanceId = record['id']?.toString();
+      for (final student in (record['students'] as List)) {
+        final map = Map<String, dynamic>.from(student as Map);
+        if (map['status'] != null) {
+          _status[map['id'].toString()] = map['status'].toString();
+        }
+      }
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Loaded saved attendance for editing.')),
+    );
+  }
+
+  Future<void> _deleteAttendance(String id) async {
+    _savedAttendances.removeWhere((item) => item['id'] == id);
+    await _persistSavedAttendances();
+    if (!mounted) return;
+    setState(() {
+      if (_editingAttendanceId == id) {
+        _editingAttendanceId = null;
+        _status.clear();
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -762,22 +1083,51 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         ),
 
         Expanded(
-          child: ListView.separated(
+          child: ListView(
             padding: const EdgeInsets.all(16),
-            itemCount: _students.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 8),
-            itemBuilder: (_, i) {
-              final s = _students[i];
-              final status = _status[s['id']] ?? '';
-              return _AttendanceRow(
-                student: s,
-                status: status,
-                onStatus: (v) => setState(() => _status[s['id']!] = v),
-              )
-                  .animate(delay: Duration(milliseconds: i * 40))
-                  .fadeIn()
-                  .slideX(begin: 0.2);
-            },
+            children: [
+              ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: _students.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 8),
+                itemBuilder: (_, i) {
+                  final s = _students[i];
+                  final status = _status[s['id']] ?? '';
+                  return _AttendanceRow(
+                    student: s,
+                    status: status,
+                    onStatus: (v) => setState(() => _status[s['id']!] = v),
+                  )
+                      .animate(delay: Duration(milliseconds: i * 40))
+                      .fadeIn()
+                      .slideX(begin: 0.2);
+                },
+              ),
+              const SizedBox(height: 16),
+              if (_savedAttendances.isNotEmpty) ...[
+                _SavedAttendanceList(
+                  records: _savedAttendances,
+                  onLoad: _loadAttendanceRecord,
+                  onDelete: _deleteAttendance,
+                ),
+              ] else ...[
+                AppCard(
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Saved records',
+                            style: TextStyle(
+                                fontSize: 14, fontWeight: FontWeight.w600)),
+                        const SizedBox(height: 6),
+                        Text(
+                            'No saved attendance yet. Save a class list and it will appear here.',
+                            style: TextStyle(
+                                fontSize: 12, color: AppColors.textMuted)),
+                      ]),
+                ),
+              ],
+            ],
           ),
         ),
       ]),
@@ -785,7 +1135,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: ElevatedButton(
-            onPressed: _status.length == _students.length ? _save : null,
+            onPressed:
+                _status.length == _students.length ? _saveAttendance : null,
             child: Text(
                 'Save Attendance · ${_presentCount}/${_students.length} Present'),
           ),
@@ -793,10 +1144,71 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       ),
     );
   }
+}
 
-  void _save() {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(const SnackBar(content: Text('✅ Attendance saved!')));
+class _SavedAttendanceList extends StatelessWidget {
+  final List<Map<String, dynamic>> records;
+  final void Function(Map<String, dynamic>) onLoad;
+  final Future<void> Function(String) onDelete;
+
+  const _SavedAttendanceList(
+      {required this.records, required this.onLoad, required this.onDelete});
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Text('Saved Attendance',
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+        const SizedBox(height: 10),
+        ...records.map((record) {
+          final present = record['presentCount'] ?? 0;
+          final absent = record['absentCount'] ?? 0;
+          final late = record['lateCount'] ?? 0;
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Row(children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => onLoad(record),
+                    child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(record['className']?.toString() ?? 'Attendance',
+                              style: const TextStyle(
+                                  fontSize: 13, fontWeight: FontWeight.w600)),
+                          const SizedBox(height: 4),
+                          Text(record['date']?.toString() ?? 'Saved',
+                              style: const TextStyle(
+                                  fontSize: 11, color: AppColors.textMuted)),
+                          const SizedBox(height: 4),
+                          Text('P $present · A $absent · L $late',
+                              style: const TextStyle(
+                                  fontSize: 11,
+                                  color: AppColors.textSecondary)),
+                        ]),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline_rounded,
+                      color: AppColors.error),
+                  onPressed: () async {
+                    await onDelete(record['id']?.toString() ?? '');
+                  },
+                ),
+              ]),
+            ),
+          );
+        }).toList(),
+      ]),
+    );
   }
 }
 

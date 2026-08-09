@@ -84,6 +84,18 @@ router.post('/classes/:classId/attendance',
   })
 );
 
+// Convenience endpoint: POST /teacher/attendance
+router.post('/attendance',
+  [body('classId').isUUID(), body('date').isDate(), body('attendanceList').isArray({ min: 1 })],
+  validate,
+  wrap(async (req, res) => {
+    const { rows: t } = await db.query('SELECT id FROM teachers WHERE user_id=$1', [req.user.id]);
+    const { classId, date, attendanceList } = req.body;
+    const result = await service.markAttendance(t[0].id, classId, date, attendanceList);
+    success(res, result, 'Attendance marked');
+  })
+);
+
 router.get('/classes/:classId/attendance/report', wrap(async (req, res) => {
   const { startDate = new Date(new Date().setDate(1)).toISOString().split('T')[0], endDate = new Date().toISOString().split('T')[0] } = req.query;
   const report = await service.getAttendanceReport(req.params.classId, startDate, endDate);
