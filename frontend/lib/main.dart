@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'features/auth/data/repositories/auth_repository.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
+import 'core/services/offline_sync_service.dart';
+import 'core/services/notification_service.dart';
 import 'core/theme/app_theme.dart';
 import 'core/router/app_router.dart';
 
@@ -17,6 +19,14 @@ void main() async {
 
   // Lock to portrait
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+
+  // Initialize core background services
+  try {
+    await OfflineSyncService.instance.init();
+    await NotificationService.instance.init();
+  } catch (e) {
+    debugPrint('[main] Service initialization error: $e');
+  }
 
   runApp(const ShikshaSaathiApp());
 }

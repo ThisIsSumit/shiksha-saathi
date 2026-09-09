@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../../core/services/pdf_service.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../shared/widgets/app_card.dart';
@@ -537,7 +538,20 @@ class _WorksheetPreview extends StatelessWidget {
           label: 'Export PDF',
           icon: Icons.picture_as_pdf_outlined,
           outlined: true,
-          onPressed: () => SnackHelper.info(context, 'PDF export coming soon'),
+          onPressed: () {
+            final qList = (ws['questions'] as List?) ?? [];
+            if (qList.isEmpty) {
+              SnackHelper.error(context, 'No questions to export.');
+              return;
+            }
+            PdfService.exportWorksheetPdf(
+              title: ws['title']?.toString() ?? 'कार्यपत्रक (Worksheet)',
+              grade: 'Class 4',
+              subject: 'Mathematics',
+              topic: ws['instructions']?.toString() ?? '',
+              questions: qList,
+            );
+          },
         )),
       ]).animate().fadeIn(delay: 400.ms),
     ]);

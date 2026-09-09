@@ -1,0 +1,360 @@
+// ═══════════════════════════════════════════════════
+// FILE 4/4: lib/features/student/presentation/screens/student_profile_screen.dart
+// STATUS: NEW — create this file
+// ═══════════════════════════════════════════════════
+
+import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../../../shared/widgets/app_card.dart';
+import '../../../../shared/widgets/section_header.dart';
+import '../../../../shared/widgets/snack_helper.dart';
+import '../../../../shared/widgets/stat_chip.dart';
+import '../../../../features/auth/presentation/bloc/auth_bloc.dart';
+
+const studentBlue = Color(0xFF0C447C);
+const studentLight = Color(0xFF1A6DB0);
+
+class StudentProfileScreen extends StatelessWidget {
+  const StudentProfileScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final state = context.read<AuthBloc>().state;
+    final user = state is AuthAuthenticated ? state.user : null;
+    final name = user?.name ?? 'User';
+    final initials = name.isNotEmpty ? name[0].toUpperCase() : 'U';
+
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: studentBlue,
+        title: const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'प्रोफ़ाइल',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            Text(
+              'Profile',
+              style: TextStyle(
+                fontSize: 11,
+                color: Colors.white70,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+          ],
+        ),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const SizedBox(height: 12),
+
+            // Hero avatar & info
+            CircleAvatar(
+              radius: 48,
+              backgroundColor: studentBlue,
+              child: Text(
+                initials,
+                style: const TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ).animate().fadeIn(delay: 100.ms).scale(duration: 400.ms),
+            const SizedBox(height: 12),
+
+            Text(
+              name,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ).animate().fadeIn(delay: 150.ms).slideY(begin: 0.2),
+            const SizedBox(height: 6),
+
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              decoration: BoxDecoration(
+                color: studentBlue.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Text(
+                'छात्र · Student',
+                style: TextStyle(
+                  color: studentBlue,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ).animate().fadeIn(delay: 200.ms),
+            const SizedBox(height: 4),
+
+            // TODO: replace with API
+            const Text(
+              'Class 4-A · Roll 03',
+              style: TextStyle(
+                fontSize: 13,
+                color: AppColors.textSecondary,
+              ),
+            ).animate().fadeIn(delay: 250.ms),
+            const SizedBox(height: 24),
+
+            // Stats row
+            const Row(
+              children: [
+                StatChip(
+                  value: '87%',
+                  label: 'उपस्थिति',
+                  labelEn: 'Attendance',
+                  icon: Icons.check_circle_outline,
+                  color: AppColors.success,
+                ),
+                SizedBox(width: 8),
+                StatChip(
+                  value: '7🔥',
+                  label: 'Streak',
+                  labelEn: 'Days',
+                  icon: Icons.local_fire_department_rounded,
+                  color: AppColors.saffron,
+                ),
+                SizedBox(width: 8),
+                StatChip(
+                  value: '74%',
+                  label: 'औसत',
+                  labelEn: 'Avg Score',
+                  icon: Icons.stars_rounded,
+                  color: studentBlue,
+                ),
+              ],
+            ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.3),
+            const SizedBox(height: 24),
+
+            // Information section
+            const SectionHeader(
+              title: 'जानकारी',
+              subtitle: 'Information',
+            ),
+            const SizedBox(height: 10),
+            AppCard(
+              child: Column(
+                children: [
+                  _InfoRow(
+                    icon: Icons.phone_outlined,
+                    label: 'फ़ोन नंबर',
+                    labelEn: 'Phone Number',
+                    value: user?.phone ?? '—',
+                  ),
+                  const Divider(height: 1, color: AppColors.border),
+                  // TODO: replace with API
+                  const _InfoRow(
+                    icon: Icons.school_outlined,
+                    label: 'विद्यालय',
+                    labelEn: 'School',
+                    value: 'Govt. Primary School, Hamirpur',
+                  ),
+                  const Divider(height: 1, color: AppColors.border),
+                  // TODO: replace with API
+                  const _InfoRow(
+                    icon: Icons.class_outlined,
+                    label: 'कक्षा',
+                    labelEn: 'Class',
+                    value: 'Class 4 — Section A',
+                  ),
+                  const Divider(height: 1, color: AppColors.border),
+                  const _InfoRow(
+                    icon: Icons.language_rounded,
+                    label: 'भाषा',
+                    labelEn: 'Language',
+                    value: 'हिंदी',
+                  ),
+                ],
+              ),
+            ).animate().fadeIn(delay: 350.ms).slideY(begin: 0.3),
+            const SizedBox(height: 24),
+
+            // Settings section
+            const SectionHeader(
+              title: 'सेटिंग्स',
+              subtitle: 'Settings',
+            ),
+            const SizedBox(height: 10),
+            AppCard(
+              child: Column(
+                children: [
+                  _SettingsTile(
+                    icon: Icons.notifications_none_rounded,
+                    title: 'सूचनाएं',
+                    subtitle: 'Notifications',
+                    onTap: () => SnackHelper.info(context, 'Coming soon / जल्द आएगा'),
+                  ),
+                  const Divider(height: 1, color: AppColors.border),
+                  _SettingsTile(
+                    icon: Icons.language_rounded,
+                    title: 'भाषा',
+                    subtitle: 'Language',
+                    onTap: () => SnackHelper.info(context, 'Coming soon / जल्द आएगा'),
+                  ),
+                  const Divider(height: 1, color: AppColors.border),
+                  _SettingsTile(
+                    icon: Icons.help_outline_rounded,
+                    title: 'सहायता',
+                    subtitle: 'Help',
+                    onTap: () => SnackHelper.info(context, 'Coming soon / जल्द आएगा'),
+                  ),
+                ],
+              ),
+            ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.3),
+            const SizedBox(height: 32),
+
+            // Logout button
+            ElevatedButton.icon(
+              icon: const Icon(Icons.logout_rounded, size: 18),
+              label: const Text('Logout / लॉग आउट'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.error,
+                foregroundColor: Colors.white,
+                minimumSize: const Size(double.infinity, 50),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              onPressed: () => context.read<AuthBloc>().add(AuthLogout()),
+            ).animate().fadeIn(delay: 450.ms).slideY(begin: 0.3),
+            const SizedBox(height: 24),
+
+            // Version text
+            const Center(
+              child: Text(
+                'Shiksha Saathi v1.0.0',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.textMuted,
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String labelEn;
+  final String value;
+
+  const _InfoRow({
+    required this.icon,
+    required this.label,
+    required this.labelEn,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: studentBlue),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              Text(
+                labelEn,
+                style: const TextStyle(
+                  fontSize: 10,
+                  color: AppColors.textMuted,
+                ),
+              ),
+            ],
+          ),
+          const Spacer(),
+          Flexible(
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SettingsTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _SettingsTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: studentBlue.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(icon, size: 20, color: studentBlue),
+      ),
+      title: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: AppColors.textPrimary,
+        ),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: const TextStyle(
+          fontSize: 11,
+          color: AppColors.textMuted,
+        ),
+      ),
+      trailing: const Icon(
+        Icons.chevron_right_rounded,
+        color: AppColors.textMuted,
+      ),
+      onTap: onTap,
+    );
+  }
+}

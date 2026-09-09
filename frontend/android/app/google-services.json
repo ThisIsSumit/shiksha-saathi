@@ -1,0 +1,34 @@
+{
+  "project_info": {
+    "project_number": "100000000000",
+    "project_id": "shiksha-saathi-app",
+    "storage_bucket": "shiksha-saathi-app.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:100000000000:android:abcdef0123456789abcdef",
+        "android_client_info": {
+          "package_name": "com.example.shiksha_saathi"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "100000000000-abcdefghijklmnopqrstuvwxyz.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDummyKeyForShikshaSaathiAppFCM00"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

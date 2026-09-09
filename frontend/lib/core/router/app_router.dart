@@ -7,10 +7,29 @@ import 'package:shiksha_saathi/features/auth/presentation/screens/onboarding_scr
 import 'package:shiksha_saathi/features/auth/presentation/screens/login_screen.dart';
 import 'package:shiksha_saathi/features/auth/presentation/screens/register_screen.dart';
 import 'package:shiksha_saathi/features/auth/presentation/screens/otp_screen.dart';
-import 'package:shiksha_saathi/features/teacher/presentation/screens/teacher_screens.dart';
+import 'package:shiksha_saathi/features/teacher/presentation/screens/teacher_shell.dart';
+import 'package:shiksha_saathi/features/teacher/presentation/screens/teacher_dashboard_screen.dart';
+import 'package:shiksha_saathi/features/teacher/presentation/screens/teacher_students_screen.dart';
+import 'package:shiksha_saathi/features/teacher/presentation/screens/teacher_attendance_screen.dart';
+import 'package:shiksha_saathi/features/teacher/presentation/screens/teacher_ai_screen.dart';
+import 'package:shiksha_saathi/features/teacher/presentation/screens/teacher_profile_screen.dart';
 import 'package:shiksha_saathi/features/teacher/presentation/screens/lesson_planner_screen.dart';
 import 'package:shiksha_saathi/features/teacher/presentation/screens/worksheet_screen.dart';
-import 'package:shiksha_saathi/features/student/presentation/screens/student_parent_screens.dart';
+import 'package:shiksha_saathi/features/teacher/presentation/screens/teacher_sms_screen.dart';
+
+import 'package:shiksha_saathi/features/student/presentation/screens/student_shell.dart';
+import 'package:shiksha_saathi/features/student/presentation/screens/student_dashboard_screen.dart';
+import 'package:shiksha_saathi/features/student/presentation/screens/student_progress_screen.dart';
+import 'package:shiksha_saathi/features/student/presentation/screens/student_study_buddy_screen.dart';
+import 'package:shiksha_saathi/features/student/presentation/screens/student_quiz_screen.dart';
+import 'package:shiksha_saathi/features/student/presentation/screens/student_profile_screen.dart';
+
+import 'package:shiksha_saathi/features/parent/presentation/screens/parent_shell.dart';
+import 'package:shiksha_saathi/features/parent/presentation/screens/parent_dashboard_screen.dart';
+import 'package:shiksha_saathi/features/parent/presentation/screens/parent_child_progress_screen.dart';
+import 'package:shiksha_saathi/features/parent/presentation/screens/parent_ai_screen.dart';
+import 'package:shiksha_saathi/features/parent/presentation/screens/parent_notifications_screen.dart';
+import 'package:shiksha_saathi/features/parent/presentation/screens/parent_profile_screen.dart';
 
 final _rootNavKey = GlobalKey<NavigatorState>();
 
@@ -85,26 +104,75 @@ GoRouter createRouter(AuthBloc authBloc) {
               path: '/teacher',
               builder: (_, __) => const TeacherDashboardScreen()),
           GoRoute(
-              path: '/teacher/lessons',
-              builder: (_, __) => const LessonPlannerScreen()),
+              path: '/teacher/students',
+              builder: (_, __) => const TeacherStudentsScreen()),
           GoRoute(
               path: '/teacher/attendance',
-              builder: (_, __) => const AttendanceScreen()),
+              builder: (_, __) => const TeacherAttendanceScreen()),
+          GoRoute(
+              path: '/teacher/ai',
+              builder: (_, __) => const TeacherAiScreen()),
+          GoRoute(
+              path: '/teacher/profile',
+              builder: (_, __) => const TeacherProfileScreen()),
+          GoRoute(
+              path: '/teacher/lessons',
+              builder: (_, __) => const LessonPlannerScreen()),
           GoRoute(
               path: '/teacher/worksheets',
               builder: (_, __) => const WorksheetScreen()),
           GoRoute(
-              path: '/teacher/ai', builder: (_, __) => const TeacherAiScreen()),
+              path: '/teacher/sms',
+              builder: (_, __) => const TeacherSmsScreen()),
         ],
       ),
 
       // ── Student ───────────────────────────────────────────
-      GoRoute(
-          path: '/student', builder: (_, __) => const StudentDashboardScreen()),
+      ShellRoute(
+        builder: (_, __, child) => StudentShell(child: child),
+        routes: [
+          GoRoute(
+              path: '/student',
+              builder: (_, __) => const StudentDashboardScreen()),
+          GoRoute(
+              path: '/student/progress',
+              builder: (_, __) => const StudentProgressScreen()),
+          GoRoute(
+              path: '/student/study-buddy',
+              builder: (_, __) => const StudentStudyBuddyScreen()),
+          GoRoute(
+              path: '/student/quizzes',
+              builder: (_, __) => const StudentQuizScreen()),
+          GoRoute(
+              path: '/student/profile',
+              builder: (_, __) => const StudentProfileScreen()),
+        ],
+      ),
 
       // ── Parent ────────────────────────────────────────────
-      GoRoute(
-          path: '/parent', builder: (_, __) => const ParentDashboardScreen()),
+      ShellRoute(
+        builder: (_, __, child) => ParentShell(child: child),
+        routes: [
+          GoRoute(
+              path: '/parent',
+              builder: (_, __) => const ParentDashboardScreen()),
+          GoRoute(
+              path: '/parent/child',
+              builder: (_, __) => const ParentChildProgressScreen()),
+          GoRoute(
+              path: '/parent/child-progress',
+              builder: (_, __) => const ParentChildProgressScreen()),
+          GoRoute(
+              path: '/parent/ai',
+              builder: (_, __) => const ParentAiScreen()),
+          GoRoute(
+              path: '/parent/notifications',
+              builder: (_, __) => const ParentNotificationsScreen()),
+          GoRoute(
+              path: '/parent/profile',
+              builder: (_, __) => const ParentProfileScreen()),
+        ],
+      ),
     ],
   );
 }

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../../core/services/pdf_service.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../shared/widgets/app_card.dart';
@@ -612,8 +613,15 @@ class _LessonPlanResult extends StatelessWidget {
             label: 'Export PDF',
             icon: Icons.picture_as_pdf_outlined,
             outlined: true,
-            onPressed: () =>
-                SnackHelper.info(context, 'PDF export coming soon'),
+            onPressed: () {
+              PdfService.exportLessonPlanPdf(
+                title: plan['title']?.toString() ?? 'पाठ योजना (Lesson Plan)',
+                grade: 'Class $grade',
+                subject: subject,
+                topic: plan['topic']?.toString() ?? plan['title']?.toString() ?? '',
+                content: plan,
+              );
+            },
           ),
         ),
       ]).animate().fadeIn(delay: 500.ms).slideY(begin: 0.3),
